@@ -1,0 +1,29 @@
+# Exercise: Tuning
+
+- Create a classification task for the  Ionosphere data set (package mlbench)
+- Remove constant features from the data set.
+- Fit a random forest on this task. Tune the parameters `mtry` and `nodesize`
+  using a 3-fold cross validation and the random search (see ?makeTuneControlRandom).
+  Set the budget via `maxit` to 20.
+- Compare the mean misclassification error (mmce) with the results of single classification tree from the rpart package.
+
+
+
+# Solution
+```{r}
+library(mlr)
+data("Ionosphere", package = "mlbench")
+task = makeClassifTask(data = Ionosphere, target = "Class", positive = "good")
+task = removeConstantFeatures(task)
+lrn = makeLearner("classif.randomForest")
+rdesc = makeResampleDesc("CV", iters = 3)
+rin = makeResampleInstance(rdesc, task)
+ps = makeParamSet(
+  makeIntegerParam("mtry", lower = 1, upper = 10),
+  makeIntegerParam("nodesize", lower = 1, upper = 10)
+)
+ctrl = makeTuneControlRandom(maxit = 20)
+res = tuneParams(learner = lrn, task = task, resampling = rin, measures = list(mmce), par.set = ps, control = ctrl)
+print(res)
+resample("classif.rpart", task = task, resampling = rin)
+```
